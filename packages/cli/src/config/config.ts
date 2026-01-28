@@ -65,6 +65,7 @@ export interface CliArgs {
   model: string | undefined;
   sandbox: boolean | string | undefined;
   debug: boolean | undefined;
+  completion: boolean | undefined;
   prompt: string | undefined;
   promptInteractive: string | undefined;
 
@@ -106,6 +107,10 @@ export async function parseArguments(
       type: 'boolean',
       description: 'Run in debug mode (open debug console with F12)',
       default: false,
+    })
+    .option('completion', {
+      type: 'boolean',
+      description: 'Generate bash/zsh completion script',
     })
     .command('$0 [query..]', 'Launch Gemini CLI', (yargsInstance) =>
       yargsInstance
@@ -335,6 +340,13 @@ export async function parseArguments(
 
   // Handle help and version flags manually since we disabled exitProcess
   if (result['help'] || result['version']) {
+    await runExitCleanup();
+    process.exit(0);
+  }
+
+  // Handle completion flag - generate bash/zsh completion script
+  if (result['completion']) {
+    yargsInstance.showCompletionScript();
     await runExitCleanup();
     process.exit(0);
   }
