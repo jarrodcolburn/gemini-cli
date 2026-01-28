@@ -601,6 +601,40 @@ describe('parseArguments', () => {
     const argv = await parseArguments(settings);
     expect(argv.isCommand).toBe(true);
   });
+
+  describe('completion flag', () => {
+    it('should generate bash/zsh completion script when --completion flag is used', async () => {
+      process.argv = ['node', 'script.js', '--completion'];
+
+      // Mock console.log to capture the completion script output
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('process.exit called');
+      });
+
+      try {
+        await parseArguments(createTestMergedSettings());
+      } catch {
+        // parseArguments exits after generating completion
+      }
+
+      // Verify that completion script was generated
+      const output = logSpy.mock.calls.map((call) => call.join(' ')).join('\n');
+
+      // Check for bash completion script markers
+      expect(output).toContain('###-begin-gemini-completions-###');
+      expect(output).toContain('_gemini_yargs_completions');
+      expect(output).toContain(
+        'complete -o bashdefault -o default -F _gemini_yargs_completions gemini',
+      );
+
+      // Verify process.exit was called
+      expect(exitSpy).toHaveBeenCalledWith(0);
+
+      logSpy.mockRestore();
+      exitSpy.mockRestore();
+    });
+  });
 });
 
 describe('loadCliConfig', () => {
@@ -3056,39 +3090,5 @@ describe('loadCliConfig mcpEnabled', () => {
     expect(config.getMcpServers()).toEqual({ serverA: { url: 'http://a' } });
     expect(config.getAllowedMcpServers()).toEqual(['serverA']);
     expect(config.getBlockedMcpServers()).toEqual(['serverB']);
-  });
-
-  describe('completion command', () => {
-    it('should generate bash/zsh completion script when --completion flag is used', async () => {
-      process.argv = ['node', 'script.js', '--completion'];
-
-      // Mock console.log to capture the completion script output
-      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
-        throw new Error('process.exit called');
-      });
-
-      try {
-        await parseArguments(createTestMergedSettings());
-      } catch {
-        // parseArguments exits after generating completion
-      }
-
-      // Verify that completion script was generated
-      const output = logSpy.mock.calls.map((call) => call.join(' ')).join('\n');
-
-      // Check for bash completion script markers
-      expect(output).toContain('###-begin-gemini-completions-###');
-      expect(output).toContain('_gemini_yargs_completions');
-      expect(output).toContain(
-        'complete -o bashdefault -o default -F _gemini_yargs_completions gemini',
-      );
-
-      // Verify process.exit was called
-      expect(exitSpy).toHaveBeenCalledWith(0);
-
-      logSpy.mockRestore();
-      exitSpy.mockRestore();
-    });
   });
 });

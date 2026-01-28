@@ -111,7 +111,6 @@ export async function parseArguments(
     .option('completion', {
       type: 'boolean',
       description: 'Generate bash/zsh completion script',
-      hidden: false,
     })
     .command('$0 [query..]', 'Launch Gemini CLI', (yargsInstance) =>
       yargsInstance
